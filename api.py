@@ -1,3 +1,4 @@
+from parse import parse
 from webob import Request, Response
 
 
@@ -10,14 +11,20 @@ class API:
         response.text = "Not found."
 
     def handle_request(self, request):
-        response = Response()  # wrapper object around response body
-        try:
-            handler = self._routes[request.path]
-            handler(request, response)
-            return response
-        except KeyError:
+        response = Response()  # wrapper object around response
+        handler, kwargs = self.find_handler(request_path=request.path)
+        if handler:
+            handler(request, response, **kwargs)
+        else:
             self.default_response(response)
-            return response
+        return response
+
+    def find_handler(self, request_path):
+        for path, handler in self._routes.items():
+            parse_result = parse(path, request_path)
+            if parse_result is not None:
+                return handler, parse_result.named
+        return None, None
 
     def route(self, path):
         # register routes and its handler function
