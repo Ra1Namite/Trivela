@@ -1,5 +1,12 @@
+import inspect
+
 from parse import parse
 from webob import Request, Response
+
+
+def re_raise_error(err, message):
+    err.args = (message,)
+    raise
 
 
 class API:
@@ -14,6 +21,13 @@ class API:
         response = Response()  # wrapper object around response
         handler, kwargs = self.find_handler(request_path=request.path)
         if handler:
+            if inspect.isclass(handler):
+                try:
+                    handler = getattr(handler(), request.method.lower())
+                except AttributeError as e:
+                    re_raise_error(e, f"Method not allowed: {request.method}")
+
+                handler(request, response, **kwargs)
             handler(request, response, **kwargs)
         else:
             self.default_response(response)

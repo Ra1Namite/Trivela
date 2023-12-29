@@ -22,3 +22,10 @@ def greeting(request, response, name):
 def sum(request, response, num_1, num_2):
     total = int(num_1) + int(num_2)
     response.text = f"{num_1} + {num_2} = {total}"
+
+@app.route("/book")
+class BookResource:
+    def get(self, req, res):
+        res.text = "Books Page"
+    def post(self, req, res):
+        res.text = "Endpoint to create a book"
