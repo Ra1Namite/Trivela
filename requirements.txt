@@ -1,3 +1,7 @@
 gunicorn==21.2.0
 parse==1.20.0
 WebOb==1.8.7
+pytest==7.4.3
+requests==2.31.0
+requests-wsgi-adapter==0.4.1
+pytest-cov==4.1.0

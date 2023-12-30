@@ -1,7 +1,9 @@
 import inspect
 
 from parse import parse
+from requests import Session as RequestsSession
 from webob import Request, Response
+from wsgiadapter import WSGIAdapter as RequestsWSGIAdapter
 
 
 def re_raise_error(err, message):
@@ -20,17 +22,19 @@ class API:
     def handle_request(self, request):
         response = Response()  # wrapper object around response
         handler, kwargs = self.find_handler(request_path=request.path)
-        if handler:
-            if inspect.isclass(handler):
-                try:
-                    handler = getattr(handler(), request.method.lower())
-                except AttributeError as e:
-                    re_raise_error(e, f"Method not allowed: {request.method}")
-
-                handler(request, response, **kwargs)
-            handler(request, response, **kwargs)
-        else:
+        if not handler:
             self.default_response(response)
+            return response
+        handler_is_function = inspect.isfunction(handler)
+        if handler_is_function:
+            handler(request, response, **kwargs)
+            return response
+        # handler is class
+        handler = getattr(handler(), request.method.lower())
+        if handler is None:
+            raise AttributeError("Method not allowed", request.method)
+
+        handler(request, response, **kwargs)
         return response
 
     def find_handler(self, request_path):
@@ -41,6 +45,9 @@ class API:
         return None, None
 
     def route(self, path):
+        msg = f"Route already exists: {path}"
+        assert path not in self._routes, msg
+
         # register routes and its handler function
         def wrapper(handler):
             self._routes[path] = handler
@@ -52,3 +59,8 @@ class API:
         request = Request(environ)  # wrapper object around request body
         response = self.handle_request(request)
         return response(environ, start_response)
+
+    def test_session(self, base_url="http://testserver"):
+        session = RequestsSession()
+        session.mount(prefix=base_url, adapter=RequestsWSGIAdapter(self))
+        return session
