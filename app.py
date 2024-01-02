@@ -3,6 +3,13 @@ from api import API
 app = API()
 
 
+def custom_exception_handler(req, res, exception_cls):
+    res.text = str(exception_cls)
+
+
+app.add_exception_handler(custom_exception_handler)
+
+
 @app.route("/home")
 def home(request, response):
     response.text = "Hello from the HOME page"
@@ -42,4 +49,11 @@ app.add_route("/sample", handler)
 
 @app.route("/template")
 def template_handler(req, res):
-    res.body = app.template("index.html", context={"name": "Rambo", "title": "Food"})
+    res.body = app.template(
+        "index.html", context={"name": "Rambo", "title": "Food"}
+    ).encode()
+
+
+@app.route("/exception")
+def exception_throwing_handler(req, res):
+    raise AssertionError("This handler should not be used.")

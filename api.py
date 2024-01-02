@@ -14,6 +14,7 @@ class API:
         self._template_env = Environment(
             loader=FileSystemLoader(os.path.abspath(templates_dir))
         )
+        self._exception_handler = None
 
     def default_response(self, response):
         response.status_code = 404
@@ -22,19 +23,25 @@ class API:
     def handle_request(self, request):
         response = Response()  # wrapper object around response
         handler, kwargs = self.find_handler(request_path=request.path)
-        if not handler:
-            self.default_response(response)
-            return response
-        handler_is_function = inspect.isfunction(handler)
-        if handler_is_function:
-            handler(request, response, **kwargs)
-            return response
-        # handler is class
-        handler = getattr(handler(), request.method.lower())
-        if handler is None:
-            raise AttributeError("Method not allowed", request.method)
+        try:
+            if not handler:
+                self.default_response(response)
+                return response
+            handler_is_function = inspect.isfunction(handler)
+            if handler_is_function:
+                handler(request, response, **kwargs)
+                return response
+            # handler is class
+            handler = getattr(handler(), request.method.lower(), None)
+            if handler is None:
+                raise AttributeError("Method not allowed", request.method)
 
-        handler(request, response, **kwargs)
+            handler(request, response, **kwargs)
+        except Exception as e:
+            if self._exception_handler is None:
+                raise e
+            else:
+                self._exception_handler(request, response, e)
         return response
 
     def find_handler(self, request_path):
@@ -82,4 +89,7 @@ class API:
     def template(self, template_name, context=None):
         if context is None:
             context = {}
-        return self._template_env.get_template(template_name).render(**context).encode()
+        return self._template_env.get_template(template_name).render(**context)
+
+    def add_exception_handler(self, exception_handler):
+        self._exception_handler = exception_handler
