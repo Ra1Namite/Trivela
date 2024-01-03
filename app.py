@@ -1,5 +1,5 @@
 from api import API
-from middleware import Middleware
+from middleware import BaseMiddleware
 
 app = API()
 
@@ -71,7 +71,7 @@ def exception_throwing_handler(req, res):
 # custom middleware
 
 
-class SimpleCustomMiddleware(Middleware):
+class SimpleCustomMiddleware(BaseMiddleware):
     def process_request(self, req):
         print("Processing request", req.url)
 

@@ -1,7 +1,7 @@
 import pytest
 
 from api import API
-from middleware import Middleware
+from middleware import BaseMiddleware
 
 FILE_DIR = "css"
 FILE_NAME = "main.css"
@@ -147,10 +147,7 @@ def test_middleware_methods_are_called(api, client):
     process_request_called = False
     process_response_called = False
 
-    class CallMiddlewareMethods(Middleware):
-        def __init__(self, app):
-            super().__init__(app)
-
+    class CallMiddlewareMethods(BaseMiddleware):
         def process_request(self, req):
             nonlocal process_request_called
             process_request_called = True

@@ -8,7 +8,7 @@ from webob import Request
 from whitenoise import WhiteNoise
 from wsgiadapter import WSGIAdapter as RequestsWSGIAdapter
 
-from middleware import Middleware
+from middleware import MiddlewareHandler
 from response import Response
 
 
@@ -22,7 +22,7 @@ class API:
         self._white_noise = WhiteNoise(
             self.wsgi_app, root=static_dir
         )  # serving static contents
-        self._middleware = Middleware(self)
+        self._middleware = MiddlewareHandler(self)
 
     def __call__(self, environ, start_response):
         path_info = environ["PATH_INFO"]
