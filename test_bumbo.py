@@ -21,16 +21,22 @@ def test_assets_are_served(tmpdir_factory):
     _create_static(static_dir)
     api = API(static_dir=str(static_dir))
     client = api.test_session()
-    response = client.get(f"http://testserver/{FILE_DIR}/{FILE_NAME}")
+    response = client.get(f"http://testserver/static/{FILE_DIR}/{FILE_NAME}")
     assert response.status_code == 200
     assert response.text == FILE_CONTENTS
 
 
 def test_404_is_returned_for_not_existent_static_file(client):
-    assert client.get("http://testserver/main1.css").status_code == 404
+    assert client.get("http://testserver/static/main1.css").status_code == 404
 
 
 def test_basic_route_adding(api):
+    @api.route("/home")
+    def home(req, res):
+        res.text = "YOLO"
+
+
+def test_route_overlap_throws_exception(api):
     @api.route("/home")
     def home(req, res):
         res.text = "YOLO"

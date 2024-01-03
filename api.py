@@ -23,6 +23,23 @@ class API:
         )  # serving static contents
         self._middleware = Middleware(self)
 
+    def __call__(self, environ, start_response):
+        path_info = environ["PATH_INFO"]
+        if path_info.startswith("/static"):
+            # requesting static content
+            environ["PATH_INFO"] = path_info[
+                len("/static") :
+            ]  # remove static from path
+            return self._white_noise(environ, start_response)  # serve static content
+        return self._middleware(
+            environ, start_response
+        )  # run middlewares when not serving static contents
+
+    def wsgi_app(self, environ, start_response):
+        request = Request(environ)  # wrapper object around request
+        response = self.handle_request(request)
+        return response(environ, start_response)
+
     def default_response(self, response):
         response.status_code = 404
         response.text = "Not found."
@@ -67,14 +84,6 @@ class API:
             return handler
 
         return wrapper
-
-    def __call__(self, environ, start_response):
-        return self._middleware(environ, start_response)
-
-    def wsgi_app(self, environ, start_response):
-        request = Request(environ)  # wrapper object around request
-        response = self.handle_request(request)
-        return response(environ, start_response)
 
     def test_session(self, base_url="http://testserver"):
         """
