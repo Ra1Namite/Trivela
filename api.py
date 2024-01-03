@@ -46,19 +46,22 @@ class API:
 
     def handle_request(self, request):
         response = Response()  # wrapper object around response
-        handler, kwargs = self.find_handler(request_path=request.path)
+        handler_data, kwargs = self.find_handler(request_path=request.path)
         try:
-            if not handler:
+            if not handler_data:
                 self.default_response(response)
                 return response
+            handler = handler_data["handler"]
+            allowed_methods = handler_data["allowed_methods"]
             handler_is_function = inspect.isfunction(handler)
             if handler_is_function:
-                handler(request, response, **kwargs)
-                return response
-            # handler is class
-            handler = getattr(handler(), request.method.lower(), None)
-            if handler is None:
-                raise AttributeError("Method not allowed", request.method)
+                if request.method.lower() not in allowed_methods:
+                    raise AttributeError("Method not allowed", request.method)
+            else:
+                # handler is class
+                handler = getattr(handler(), request.method.lower(), None)
+                if handler is None:
+                    raise AttributeError("Method not allowed", request.method)
 
             handler(request, response, **kwargs)
         except Exception as e:
@@ -69,21 +72,32 @@ class API:
         return response
 
     def find_handler(self, request_path):
-        for path, handler in self._routes.items():
+        for path, handler_data in self._routes.items():
             parse_result = parse(
                 path, request_path
             )  # match request path with existing path in system and gets arguments values in path
             if parse_result is not None:
-                return handler, parse_result.named
+                return handler_data, parse_result.named
         return None, None
 
-    def route(self, path):
+    def route(self, path, allowed_methods=None):
         # register routes and its handler function
         def wrapper(handler):
-            self.add_route(path, handler)
+            self.add_route(path, handler, allowed_methods)
             return handler
 
         return wrapper
+
+    def add_route(self, path, handler, allowed_methods=None):
+        msg = f"Route already exists: {path}."
+        assert path not in self._routes, msg
+        if allowed_methods is None:
+            allowed_methods = ("get", "post", "put", "patch", "delete", "options")
+
+        self._routes[path] = {
+            "handler": handler,
+            "allowed_methods": allowed_methods,
+        }  # register handler and allowed methods for given path
 
     def test_session(self, base_url="http://testserver"):
         """
@@ -100,12 +114,6 @@ class API:
             prefix=base_url, adapter=RequestsWSGIAdapter(self)
         )  # any request made using this test_session whose URL starts with the given prefix, will use the given RequestsWSGIAdapter.
         return session
-
-    def add_route(self, path, handler):
-        msg = f"Route already exists: {path}."
-        assert path not in self._routes, msg
-
-        self._routes[path] = handler
 
     def template(self, template_name, context=None):
         # render html template
