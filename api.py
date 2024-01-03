@@ -8,6 +8,8 @@ from webob import Request, Response
 from whitenoise import WhiteNoise
 from wsgiadapter import WSGIAdapter as RequestsWSGIAdapter
 
+from middleware import Middleware
+
 
 class API:
     def __init__(self, templates_dir="templates", static_dir="static"):
@@ -19,6 +21,7 @@ class API:
         self._white_noise = WhiteNoise(
             self.wsgi_app, root=static_dir
         )  # serving static contents
+        self._middleware = Middleware(self)
 
     def default_response(self, response):
         response.status_code = 404
@@ -66,7 +69,7 @@ class API:
         return wrapper
 
     def __call__(self, environ, start_response):
-        return self._white_noise(environ, start_response)
+        return self._middleware(environ, start_response)
 
     def wsgi_app(self, environ, start_response):
         request = Request(environ)  # wrapper object around request
@@ -75,7 +78,9 @@ class API:
 
     def test_session(self, base_url="http://testserver"):
         """
-        since python's Requests library only ships with a single Transport Adapter, the HTTPAdapter,
+        Build a test client to test the API without having to spin up the server.
+
+        Since python's Requests library only ships with a single Transport Adapter, the HTTPAdapter,
         we'd have to fire up Gunicorn before each test run in order to use it in the unit tests.
         That defeats the purpose of unit tests, though: Unit tests should be self-sustained.
         Fortunately, we can use the WSGI Transport Adapter for Requests library to create
@@ -102,3 +107,6 @@ class API:
     def add_exception_handler(self, exception_handler):
         # register custom exception handler
         self._exception_handler = exception_handler
+
+    def add_middleware(self, middleware_cls):
+        self._middleware.add(middleware_cls)
