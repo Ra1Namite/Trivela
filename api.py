@@ -5,16 +5,20 @@ from jinja2 import Environment, FileSystemLoader
 from parse import parse
 from requests import Session as RequestsSession
 from webob import Request, Response
+from whitenoise import WhiteNoise
 from wsgiadapter import WSGIAdapter as RequestsWSGIAdapter
 
 
 class API:
-    def __init__(self, templates_dir="templates"):
-        self._routes = {}
+    def __init__(self, templates_dir="templates", static_dir="static"):
+        self._routes = {}  # routes and its handler
         self._template_env = Environment(
             loader=FileSystemLoader(os.path.abspath(templates_dir))
-        )
-        self._exception_handler = None
+        )  # initialize jinja environment
+        self._exception_handler = None  # custom exception handler
+        self._white_noise = WhiteNoise(
+            self.wsgi_app, root=static_dir
+        )  # serving static contents
 
     def default_response(self, response):
         response.status_code = 404
@@ -62,6 +66,9 @@ class API:
         return wrapper
 
     def __call__(self, environ, start_response):
+        return self._white_noise(environ, start_response)
+
+    def wsgi_app(self, environ, start_response):
         request = Request(environ)  # wrapper object around request
         response = self.handle_request(request)
         return response(environ, start_response)
@@ -87,9 +94,11 @@ class API:
         self._routes[path] = handler
 
     def template(self, template_name, context=None):
+        # render html template
         if context is None:
             context = {}
         return self._template_env.get_template(template_name).render(**context)
 
     def add_exception_handler(self, exception_handler):
+        # register custom exception handler
         self._exception_handler = exception_handler

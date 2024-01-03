@@ -6,3 +6,4 @@ requests==2.31.0
 requests-wsgi-adapter==0.4.1
 pytest-cov==4.1.0
 Jinja2==3.1.2
+whitenoise==6.6.0
