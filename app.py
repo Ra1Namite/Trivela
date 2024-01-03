@@ -48,11 +48,19 @@ def handler(req, res):
 app.add_route("/sample", handler)
 
 
+@app.route("/text")
+def text_handler(req, res):
+    res.text = "This is testing!!"
+
+
 @app.route("/template")
 def template_handler(req, res):
-    res.body = app.template(
-        "index.html", context={"name": "Rambo", "title": "Food"}
-    ).encode()
+    res.html = app.template("index.html", context={"name": "Rambo", "title": "Food"})
+
+
+@app.route("/json")
+def json_handler(req, res):
+    res.json = {"name": "data", "type": "JSON"}
 
 
 @app.route("/exception")
