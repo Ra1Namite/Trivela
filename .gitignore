@@ -3,3 +3,8 @@ __pycache__/
 env/
 .mypy_cache/
 .coverage
+build/
+dist/
+.eggs/
+.pytest_cache/
+trivela.egg-info/
