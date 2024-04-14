@@ -1,41 +1,4 @@
-import os
 import sqlite3
-
-import pytest
-
-from trivela.orm import Column, Database, ForeignKey, Table
-
-
-# fixtures
-@pytest.fixture
-def Author():
-    class Author(Table):
-        name = Column(str)
-        age = Column(int)
-
-    return Author
-
-
-@pytest.fixture
-def Book(Author):
-    class Book(Table):
-        title = Column(str)
-        published = Column(bool)
-        author = ForeignKey(Author)
-
-    return Book
-
-
-@pytest.fixture
-def db():
-    DB_PATH = "./test.db"
-    if os.path.exists(DB_PATH):
-        os.remove(DB_PATH)
-    db = Database(DB_PATH)
-    return db
-
-
-# tests
 
 
 def test_create_db(db):
@@ -64,3 +27,33 @@ def test_create_tables(db, Author, Book):
 
     for table in ("author", "book"):
         assert table in db.tables
+
+
+def test_create_author_instance(db, Author):
+    db.create(Author)
+    fidy = Author(name="50 Cent", age=50)
+    assert fidy.name == "50 Cent"
+    assert fidy.age == 50
+    assert fidy.id is None
+
+
+def test_save_author_instances(db, Author):
+    db.create(Author)
+    john = Author(name="Lebron", age=23)
+    db.save(john)
+    assert john._get_insert_sql() == (
+        "INSERT INTO author (age, name) VALUES (?, ?);",
+        [23, "Lebron"],
+    )
+    assert john.id == 1
+    man = Author(name="John Cena", age=33)
+    db.save(man)
+    assert man.id == 2
+
+    wick = Author(name="Wick", age=40)
+    db.save(wick)
+    assert wick.id == 3
+
+    rooney = Author(name="Wayne", age=30)
+    db.save(rooney)
+    assert rooney.id == 4
