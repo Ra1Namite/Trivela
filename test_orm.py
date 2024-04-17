@@ -1,5 +1,7 @@
 import sqlite3
 
+import pytest
+
 
 def test_create_db(db):
     assert isinstance(db.conn, sqlite3.Connection)
@@ -125,3 +127,25 @@ def test_query_all_books(db, Author, Book):
 
     assert len(books) == 2
     assert books[1].author.name == "Messi"
+
+
+def test_update_author(db, Author):
+    db.create(Author)
+    david = Author(name="David", age=20)
+    db.save(david)
+
+    david.age = 43
+    david.name = "Rio"
+    db.update(david)
+    david_from_db = db.get(Author, id=david.id)
+    assert david_from_db.age == 43
+    assert david_from_db.name == "Rio"
+
+
+def test_delete_author(db, Author):
+    db.create(Author)
+    david = Author(name="David", age=23)
+    db.save(david)
+    db.delete(Author, id=1)
+    with pytest.raises(Exception):
+        db.get(Author, 1)

@@ -9,7 +9,7 @@ DESCRIPTION = "Trivela Python Web Framework build for learning purpose."
 EMAIL = "rainamite@gmail.com"
 AUTHOR = "Sanjaya Rai"
 REQUIRES_PYTHON = ">=3.12.0"
-VERSION = "0.0.4"
+VERSION = "0.0.5"
 
 # which packages are required for this module to be executed?
 REQUIRED = [

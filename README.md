@@ -145,3 +145,73 @@ class SimpleCustomMiddleware(Middleware):
 
 app.add_middleware(SimpleCustomMiddleware)
 ```
+### ORM
+You can use `Trivela ORM` to interact with database and perform some basic operations mentioned below:
+
+Connect to the database:
+```python
+from trivela.orm import Database
+db = Database("./demo.db")
+```
+
+Defining tables:
+```python
+from trivela.orm import Table, Column, ForeignKey
+
+class Author(Table):
+    name = Column(str)
+    age = Column(int)
+
+class Book(Table):
+    title = Column(str)
+    published = Column(bool)
+    author = ForeignKey(Author)
+```
+
+Creating tables:
+```python
+db.create(Author)
+db.create(Book)
+```
+
+Creating an instance and inserting a row in database:
+```python
+david = Author(name='David', age=23)
+db.save(david)
+```
+
+Fetching all rows from database:
+```python
+authors = db.all(Author)
+```
+
+Fetching a specific row by `Id`:
+```python
+author = db.get(Author, 100)
+
+```
+
+Saving an object with a foreign key reference:
+```python
+book = Book(title="Hello world", published=True, author=david)
+db.save(book)
+
+```
+
+Fetching an object with a foreign key:
+```python
+print(db.get(Book, 100).author.name)
+```
+
+Updating an object:
+```python
+book.title = "World Hello"
+db.update(book)
+```
+
+Deleting an object:
+```python
+db.delete(Book, id=book.id)
+```
+
+
